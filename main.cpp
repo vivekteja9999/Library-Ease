@@ -1,26 +1,56 @@
 #include <iostream>
-#include <cstring>
+#include <vector>
+#include <string>
 #include <iomanip>
-
+#include<bits/stdc++.h>
 using namespace std;
 
-// Constants
-const int MAX_STUDENTS = 20;
-const int MAX_BOOKS = 15;
-const int MAX_NAME_LENGTH = 50;
+const double ACCOUNT_OPENING_FEE = 20.0;
+const double SECURITY_DEPOSIT = 30.0;
+const double BOOK_ISSUE_FEE = 2.0;
+const double MIN_INITIAL_DEPOSIT = 50.0;
 
-// Global variables
-int student_count = 0;
-int book_count = 0;
-double student_balance[MAX_STUDENTS];
-int student_roll[MAX_STUDENTS];
-char student_name[MAX_STUDENTS][MAX_NAME_LENGTH];
-char book_title[MAX_BOOKS][MAX_NAME_LENGTH];
-char book_author[MAX_BOOKS][MAX_NAME_LENGTH];
-int book_isbn[MAX_BOOKS];
-bool book_available[MAX_BOOKS];
+class Book {
+public:
+    string title;
+    string author;
+    int isbn;
+    bool available;
 
-// Function prototypes
+    Book(string t, string a, int i) : title(t), author(a), isbn(i), available(true) {}
+};
+
+class Student {
+public:
+    int roll;
+    string name;
+    double balance;
+
+    Student(int r, string n, double b) : roll(r), name(n), balance(b - ACCOUNT_OPENING_FEE - SECURITY_DEPOSIT) {}
+
+    void display() const {
+        cout << "Roll No: " << roll << endl;
+        cout << "Name: " << name << endl;
+        cout << "Balance: $" << fixed << setprecision(2) << balance << endl;
+    }
+
+    void deposit(double amount) {
+        balance += amount;
+        cout << "New balance: $" << fixed << setprecision(2) << balance << endl;
+    }
+
+    bool canAfford(double amount) const {
+        return balance >= amount;
+    }
+
+    void deduct(double amount) {
+        balance -= amount;
+    }
+};
+
+vector<Student> students;
+vector<Book> books;
+
 void create_account();
 void display(int roll);
 void deposit_amount(int roll, double amount);
@@ -33,16 +63,10 @@ void edit_book();
 void view_books();
 
 int main() {
-    // Initialization
-    // Add initial 15 books to the library
-    // TODO: Replace with actual book data
-    for (int i = 0; i < MAX_BOOKS; i++) {
-        strcpy(book_title[i], "Title");
-        strcpy(book_author[i], "Author");
-        book_isbn[i] = i + 1000;
-        book_available[i] = true;
+    // Add initial 15 books to the library (using placeholder data)
+    for (int i = 0; i < 15; i++) {
+        books.emplace_back("Title", "Author", 1000 + i);
     }
-    book_count = MAX_BOOKS;
 
     int option;
     bool is_admin;
@@ -61,7 +85,7 @@ int main() {
         cout << "Enter password: ";
         cin >> password;
 
-        if (password == "password") { // Use a simple password for demonstration purposes.
+        if (password == "password") { // Simple password for demonstration
             if (is_admin) {
                 cout << "Admin options:\n1. Add book\n2. Edit book\n3. View book status\n4. View enrolled students\n5. View student balance\n";
                 cin >> option;
@@ -109,7 +133,7 @@ int main() {
 
                     switch (option) {
                         case 1: {
-                            display(roll);
+                            students[index].display();
                             break;
                         }
                         case 2: {
@@ -128,185 +152,169 @@ int main() {
             }
         } else {
             cout << "Incorrect password.\n";
-}
-}
-return 0;
+        }
+    }
+
+    return 0;
 }
 
 void create_account() {
-if (student_count >= MAX_STUDENTS) {
-cout << "Student limit reached. Cannot create more accounts.\n";
-return;
-}
+    int roll;
+    cout << "Enter roll number (BBRRRR format): ";
+    cin >> roll;
 
-int roll;
-cout << "Enter roll number (BBRRRR format): ";
-cin >> roll;
+    if (find_student(roll) != -1) {
+        cout << "Account already exists for this roll number.\n";
+        return;
+    }
 
-if (find_student(roll) != -1) {
-    cout << "Account already exists for this roll number.\n";
-    return;
-}
+    string name;
+    cout << "Enter student name: ";
+    cin.ignore();
+    getline(cin, name);
 
-student_roll[student_count] = roll;
-cout << "Enter student name: ";
-cin.ignore();
-cin.getline(student_name[student_count], MAX_NAME_LENGTH);
+    double initial_deposit;
+    cout << "Enter initial deposit amount ($50 minimum): ";
+    cin >> initial_deposit;
 
-double initial_deposit;
-cout << "Enter initial deposit amount ($50 minimum): ";
-cin >> initial_deposit;
+    if (initial_deposit < MIN_INITIAL_DEPOSIT) {
+        cout << "Initial deposit must be at least $50.\n";
+        return;
+    }
 
-if (initial_deposit < 50) {
-    cout << "Initial deposit must be at least $50.\n";
-    return;
-}
-
-student_balance[student_count] = initial_deposit - 20 - 30; // Account opening and security deposit
-student_count++;
+    students.emplace_back(roll, name, initial_deposit);
 }
 
 void display(int roll) {
-int index = find_student(roll);
-if (index == -1) {
-    cout << "Student not found.\n";
-    return;
-}
+    int index = find_student(roll);
+    if (index == -1) {
+        cout << "Student not found.\n";
+        return;
+    }
 
-cout << "Roll No: " << student_roll[index] << endl;
-cout << "Name: " << student_name[index] << endl;
-cout << "Balance: $" << fixed << setprecision(2) << student_balance[index] << endl;
+    students[index].display();
 }
 
 void deposit_amount(int roll, double amount) {
-int index = find_student(roll);
-if (index == -1) {
-    cout << "Student not found.\n";
-    return;
-}
+    int index = find_student(roll);
+    if (index == -1) {
+        cout << "Student not found.\n";
+        return;
+    }
 
-student_balance[index] += amount;
-cout << "New balance: $" << fixed << setprecision(2) << student_balance[index] << endl;
+    students[index].deposit(amount);
 }
 
 void issue_item(int roll) {
-int index = find_student(roll);
-if (index == -1) {
-    cout << "Student not found.\n";
-    return;
-}
+    int index = find_student(roll);
+    if (index == -1) {
+        cout << "Student not found.\n";
+        return;
+    }
 
-cout << "Available books:\n";
-for (int i = 0; i < book_count; i++) {
-    if (book_available[i]) {
-        cout << i + 1 << ". " << book_title[i] << " by " << book_author[i] << " (ISBN: " << book_isbn[i] << ")\n";
+    cout << "Available books:\n";
+    for (size_t i = 0; i < books.size(); i++) {
+        if (books[i].available) {
+            cout << i + 1 << ". " << books[i].title << " by " << books[i].author << " (ISBN: " << books[i].isbn << ")\n";
+        }
+    }
+
+    int choice;
+    cout << "Enter the number of the book you want to issue (0 to cancel): ";
+    cin >> choice;
+
+    if (choice == 0) {
+        return;
+    }
+
+    if (books[choice - 1].available && students[index].canAfford(BOOK_ISSUE_FEE)) {
+        books[choice - 1].available = false;
+        students[index].deduct(BOOK_ISSUE_FEE);
+        cout << "Book issued successfully. New balance: $" << fixed << setprecision(2) << students[index].balance << endl;
+    } else {
+        cout << "Cannot issue the book. Insufficient balance or book is unavailable.\n";
     }
 }
 
-int choice;
-cout << "Enter the number of the book you want to issue (0 to cancel): ";
-cin >> choice;
-
-if (choice == 0) {
-    return;
-}
-
-if (book_available[choice - 1] && student_balance[index] >= 2) {
-    book_available[choice - 1] = false;
-    student_balance[index] -= 2;
-    cout << "Book issued successfully. New balance: $" << fixed << setprecision(2) << student_balance[index] << endl;
-} else {
-    cout << "Cannot issue the book. Insufficient balance or book is unavailable.\n";
-}
-}
-
 void display_sorted() {
-for (int i = 0; i < student_count; i++) {
-for (int j = i + 1; j < student_count; j++) {
-if (student_roll[i] > student_roll[j]) {
-swap(student_roll[i], student_roll[j]);
-swap(student_balance[i], student_balance[j]);
-swap(student_name[i], student_name[j]);
-}
-}
-}
+    vector<Student> sorted_students = students;
 
-for (int i = 0; i < student_count; i++) {
-    cout << student_roll[i]<< " - " << student_name[i] << " - Balance: $" << fixed << setprecision(2) << student_balance[i] << endl;
-}
+    sort(sorted_students.begin(), sorted_students.end(), [](const Student &a, const Student &b) {
+        return a.roll < b.roll;
+    });
+
+    for (const auto &student : sorted_students) {
+        cout << student.roll << " - " << student.name << " - Balance: $" << fixed << setprecision(2) << student.balance << endl;
+    }
 }
 
 int find_student(int roll) {
-for (int i = 0; i < student_count; i++) {
-if (student_roll[i] == roll) {
-return i;
-}
-}
-return -1;
+    for (size_t i = 0; i < students.size(); i++) {
+        if (students[i].roll == roll) {
+            return i;
+        }
+    }
+    return -1;
 }
 
 int find_book(int isbn) {
-for (int i = 0; i < book_count; i++) {
-if (book_isbn[i] == isbn) {
-return i;
-}
-}
-return -1;
+    for (size_t i = 0; i < books.size(); i++) {
+        if (books[i].isbn == isbn) {
+            return i;
+        }
+    }
+    return -1;
 }
 
 void add_book() {
-if (book_count >= MAX_BOOKS) {
-cout << "Book limit reached. Cannot add more books.\n";
-return;
-}
-cout << "Enter book title: ";
-cin.ignore();
-cin.getline(book_title[book_count], MAX_NAME_LENGTH);
+    string title, author;
+    int isbn;
 
-cout << "Enter book author: ";
-cin.getline(book_author[book_count], MAX_NAME_LENGTH);
+    cout << "Enter book title: ";
+    cin.ignore();
+    getline(cin, title);
 
-int isbn;
-cout << "Enter book ISBN: ";
-cin >> isbn;
+    cout << "Enter book author: ";
+    getline(cin, author);
 
-if (find_book(isbn) != -1) {
-    cout << "A book with this ISBN already exists.\n";
-    return;
-}
+    cout << "Enter book ISBN: ";
+    cin >> isbn;
 
-book_isbn[book_count] = isbn;
-book_available[book_count] = true;
-book_count++;
+    if (find_book(isbn) != -1) {
+        cout << "A book with this ISBN already exists.\n";
+        return;
+    }
+
+    books.emplace_back(title, author, isbn);
 }
 
 void edit_book() {
-int isbn;
-cout << "Enter book ISBN to edit: ";
-cin >> isbn;
-int index = find_book(isbn);
-if (index == -1) {
-    cout << "Book not found.\n";
-    return;
-}
+    int isbn;
+    cout << "Enter book ISBN to edit: ";
+    cin >> isbn;
+    int index = find_book(isbn);
+    if (index == -1) {
+        cout << "Book not found.\n";
+        return;
+    }
 
-cout << "Current book title: " << book_title[index] << endl;
-cout << "Enter new book title: ";
-cin.ignore();
-cin.getline(book_title[index], MAX_NAME_LENGTH);
+    cout << "Current book title: " << books[index].title << endl;
+    cout << "Enter new book title: ";
+    cin.ignore();
+    getline(cin, books[index].title);
 
-cout << "Current book author: " << book_author[index] << endl;
-cout << "Enter new book author: ";
-cin.getline(book_author[index], MAX_NAME_LENGTH);
+    cout << "Current book author: " << books[index].author << endl;
+    cout << "Enter new book author: ";
+    getline(cin, books[index].author);
 
-cout << "Book details updated.\n";
+    cout << "Book details updated.\n";
 }
 
 void view_books() {
-for (int i = 0; i < book_count; i++) {
-cout << "Title: " << book_title[i] << endl;
-cout << "Author: " << book_author[i] << endl;
-cout << "ISBN: " << book_isbn[i] << endl;
-cout << "Available: " << (book_available[i] ? "Yes" : "No") << endl << endl;
-}
+    for (const auto &book : books) {
+        cout << "Title: " << book.title << endl;
+        cout << "Author: " << book.author << endl;
+        cout << "ISBN: " << book.isbn << endl;
+        cout << "Available: " << (book.available ? "Yes" : "No") << endl << endl;
+    }
 }
